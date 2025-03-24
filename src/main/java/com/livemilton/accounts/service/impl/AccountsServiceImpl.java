@@ -1,10 +1,13 @@
 package com.livemilton.accounts.service.impl;
 
 import com.livemilton.accounts.constants.AccountsConstants;
+import com.livemilton.accounts.dto.AccountsDto;
 import com.livemilton.accounts.dto.CustomerDto;
 import com.livemilton.accounts.entity.Accounts;
 import com.livemilton.accounts.entity.Customer;
 import com.livemilton.accounts.exception.CustomerAlreadyExistsException;
+import com.livemilton.accounts.exception.ResourceNotFoundException;
+import com.livemilton.accounts.mapper.AccountsMapper;
 import com.livemilton.accounts.mapper.CustomerMapper;
 import com.livemilton.accounts.repository.AccountsRepository;
 import com.livemilton.accounts.repository.CustomerRepository;
@@ -45,6 +48,7 @@ public class AccountsServiceImpl implements IAccountsService {
 
     }
 
+
     private Accounts createNewAccount(Customer customer){
         Accounts newAccount = new Accounts();
         newAccount.setCustomerId(customer.getCustomerId());
@@ -57,4 +61,49 @@ public class AccountsServiceImpl implements IAccountsService {
         newAccount.setCreatedBy("Anonymous");
         return newAccount;
     }
+
+    /**
+     *
+     * @param mobileNumber - Input Mobile Number
+     * @return Accounts Details based on a given mobileNumber
+     */
+    @Override
+    public CustomerDto fetchAccount(String mobileNumber) {
+        Customer customer = customerRepository.findByMobileNumber(mobileNumber).orElseThrow(
+                ()->new ResourceNotFoundException("Customer","mobileNumber",mobileNumber)
+        );
+        Accounts accounts= accountsRepository.findByCustomerId(customer.getCustomerId()).orElseThrow(
+                ()->new ResourceNotFoundException("Account","customerId", customer.getCustomerId().toString())
+        );
+        CustomerDto customerDto = CustomerMapper.mapToCustomerDto(customer, new CustomerDto());
+        customerDto.setAccountsDto(AccountsMapper.mapToAccountsDto(accounts, new AccountsDto()));
+        return customerDto;
+    }
+
+    /**
+     * @param customerDto - CustomerDto Object
+     * @return boolean indicating if the update of Account details is successful or not
+     */
+    @Override
+    public boolean updateAccount(CustomerDto customerDto) {
+        boolean isUpdated = false;
+        AccountsDto accountsDto = customerDto.getAccountsDto();
+        if(accountsDto !=null ){
+            Accounts accounts = accountsRepository.findById(accountsDto.getAccountNumber()).orElseThrow(
+                    () -> new ResourceNotFoundException("Account", "AccountNumber", accountsDto.getAccountNumber().toString())
+            );
+            AccountsMapper.mapToAccounts(accountsDto, accounts);
+            accounts = accountsRepository.save(accounts);
+
+            Long customerId = accounts.getCustomerId();
+            Customer customer = customerRepository.findById(customerId).orElseThrow(
+                    () -> new ResourceNotFoundException("Customer", "CustomerID", customerId.toString())
+            );
+            CustomerMapper.mapToCustomer(customerDto,customer);
+            customerRepository.save(customer);
+            isUpdated = true;
+        }
+        return  isUpdated;
+    }
+
 }
