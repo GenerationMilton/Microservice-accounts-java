@@ -13,9 +13,9 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 @EnableJpaAuditing(auditorAwareRef = "auditAwareImpl")
 @OpenAPIDefinition(
 		info=@Info(
-				title="Accounts microservice REST API Documentation",
+				title= "Accounts microservice REST API Documentation",
 				description = "livemilton Accounts microservice REST API Documentation",
-				version="v1",
+				version= "v1",
 				contact = @Contact(
 						name="Milton Muñoz",
 						email = "livemilton@gmail.com",
